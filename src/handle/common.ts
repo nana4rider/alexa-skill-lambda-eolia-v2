@@ -26,7 +26,6 @@ export function getAlexaThermostatMode(mode: EoliaOperationMode): AlexaThermosta
   case 'Auto':
     return 'AUTO';
   case 'Cooling':
-  case 'CoolDehumidifying': // 冷房除湿もAlexaの扱いは冷房とする
     return 'COOL';
   case 'Heating':
     return 'HEAT';
