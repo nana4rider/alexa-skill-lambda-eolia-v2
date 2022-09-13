@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon';
-import { EoliaClient, EoliaTemperatureError } from 'panasonic-eolia-ts';
+import { EoliaClient, EoliaTemperatureError, EoliaWindVolume } from 'panasonic-eolia-ts';
 import { v4 as uuid } from 'uuid';
 import { DeviceStatus } from '../ApiClient';
 import { AlexaThermostatMode } from '../model/AlexaThermostatMode';
@@ -20,19 +20,39 @@ export async function handleSetTargetTemperature(request: any) {
   const device = await client.getDeviceStatus(deviceId);
 
   const targetSetpoint: number = request.directive.payload.targetSetpoint.value;
-  if (targetSetpoint < EoliaClient.MIN_TEMPERATURE || targetSetpoint > EoliaClient.MAX_TEMPERATURE) {
-    throw new EoliaTemperatureError(targetSetpoint);
-  }
 
-  await client.executeCommand(deviceId, {
-    operation_status: true,
-    temperature: targetSetpoint
-  });
+  // 設定範囲外の温度で、風量を設定させる隠しコマンド(ThermostatControllerに風量がサポートされたら移行)
+  // 50:自動 51~54:風量 55:パワフル
+  const baseWindTemp = 50;
+  if (targetSetpoint === baseWindTemp) {
+    await client.executeCommand(deviceId, {
+      wind_volume: 0
+    });
+  } else if (targetSetpoint >= baseWindTemp + 1 && targetSetpoint <= baseWindTemp + 4) {
+    const windVolume = targetSetpoint - baseWindTemp + 1 as EoliaWindVolume;
+    await client.executeCommand(deviceId, {
+      wind_volume: windVolume
+    });
+  } else if (targetSetpoint === baseWindTemp + 5) {
+    await client.executeCommand(deviceId, {
+      air_flow: 'powerful'
+    });
+  } else {
+    // 本来の処理
+    if (targetSetpoint < EoliaClient.MIN_TEMPERATURE || targetSetpoint > EoliaClient.MAX_TEMPERATURE) {
+      throw new EoliaTemperatureError(targetSetpoint);
+    }
 
-  if (!device.status.operation_status) {
-    device.status.operation_mode = device.lastMode ?? 'Auto';
+    await client.executeCommand(deviceId, {
+      operation_status: true,
+      temperature: targetSetpoint
+    });
+
+    if (!device.status.operation_status) {
+      device.status.operation_mode = device.lastMode ?? 'Auto';
+    }
+    device.status.temperature = targetSetpoint;
   }
-  device.status.temperature = targetSetpoint;
 
   return {
     'event': {
