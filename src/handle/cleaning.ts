@@ -9,7 +9,7 @@ import { getApiClient } from './common';
 export async function handleCleaningActivate(deviceId: number, operationMode: 'Cleaning' | 'NanoexCleaning') {
   const client = getApiClient();
 
-  await client.executeCommand(deviceId, 'mode', {
-    'value': operationMode
+  await client.executeCommand(deviceId, {
+    operation_mode: operationMode
   });
 }

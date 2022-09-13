@@ -1,11 +1,11 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
-import { EoliaDevice, EoliaOperationMode, EoliaStatus } from 'panasonic-eolia-ts';
+import { EoliaDevice, EoliaOperation, EoliaOperationMode, EoliaStatus } from 'panasonic-eolia-ts';
 
 class ApiClient {
 
   private client: AxiosInstance;
 
-  constructor(baseURL: string, apiKey: string) {
+  constructor(baseURL: string, authorization: string) {
     this.client = axios.create({
       baseURL,
       headers: {
@@ -13,7 +13,7 @@ class ApiClient {
         'Content-Type': 'application/json; charset=UTF-8',
         'Accept-Language': 'ja-jp',
         'Accept-Encoding': 'gzip',
-        'Authorization': 'Api-Key ' + apiKey
+        'Authorization': authorization
       },
     });
   }
@@ -28,8 +28,10 @@ class ApiClient {
     return response.data;
   }
 
-  async executeCommand(id: number, command: string, params: any): Promise<void> {
-    await this.client.post(`/devices/${id}/command/${command}`, params);
+  async executeCommand(id: number, params: Partial<
+    Omit<EoliaOperation, 'appliance_id' | 'operation_token' | 'airquality'>
+  >): Promise<void> {
+    await this.client.post(`/devices/${id}/command/send`, params);
   }
 }
 

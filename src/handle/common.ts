@@ -9,7 +9,7 @@ let apiClient: ApiClient | undefined = undefined;
 
 export function getApiClient() {
   if (!apiClient) {
-    apiClient = new ApiClient(env.API_URL!, env.API_KEY!);
+    apiClient = new ApiClient(env.API_URL!, env.API_AUTHORIZATION!);
   }
   return apiClient;
 }

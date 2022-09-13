@@ -24,8 +24,9 @@ export async function handleSetTargetTemperature(request: any) {
     throw new EoliaTemperatureError(targetSetpoint);
   }
 
-  await client.executeCommand(deviceId, 'temperature', {
-    'value': targetSetpoint
+  await client.executeCommand(deviceId, {
+    operation_status: true,
+    temperature: targetSetpoint
   });
 
   if (!device.status.operation_status) {
@@ -73,8 +74,9 @@ export async function handleAdjustTargetTemperature(request: any) {
     throw new EoliaTemperatureError(targetSetpoint);
   }
 
-  await client.executeCommand(deviceId, 'temperature', {
-    'value': targetSetpoint
+  await client.executeCommand(deviceId, {
+    operation_status: true,
+    temperature: targetSetpoint
   });
 
   if (!device.status.operation_status) {
@@ -121,8 +123,8 @@ export async function handleSetThermostatMode(request: any) {
   const operationMode = getEoliaOperationMode(thermostatMode, customName);
 
   if (operationMode) {
-    await client.executeCommand(deviceId, 'mode', {
-      'value': operationMode
+    await client.executeCommand(deviceId, {
+      operation_mode: operationMode
     });
 
     device.status.operation_mode = operationMode;
@@ -161,12 +163,13 @@ export async function handlePower(request: any, power: 'ON' | 'OFF') {
 
   const client = getApiClient();
   const device = await client.getDeviceStatus(deviceId);
+  const operationStatus = power === 'ON';
 
-  await client.executeCommand(deviceId, 'power', {
-    'value': power
+  await client.executeCommand(deviceId, {
+    operation_status: operationStatus
   });
 
-  if (power === 'ON') {
+  if (operationStatus) {
     device.status.operation_mode = device.lastMode ?? 'Auto';
   } else {
     device.status.operation_mode = 'Stop';
